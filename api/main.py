@@ -1,7 +1,7 @@
 """
 FastAPI application for AMED Research Database
 """
-from fastapi import FastAPI, Query, HTTPException
+from fastapi import FastAPI, Query, HTTPException, Request
 from fastapi.responses import JSONResponse
 from typing import Optional, List
 from pydantic import BaseModel
@@ -16,8 +16,8 @@ from sqlalchemy import func, or_, extract
 
 app = FastAPI(
     title="AMED Research Database API",
-    description="API for accessing AMED research proposals and analytics",
-    version="0.1.0"
+    description="API for accessing AMED research proposals and analytics. Designed for LLM and AI agent consumption.",
+    version="0.2.0"
 )
 
 # Database setup
@@ -51,6 +51,23 @@ class InstitutionStats(BaseModel):
     name: str
     project_count: int
 
+# Helpers
+
+def _compact_project(proj_resp):
+    """Convert a full project response to compact format."""
+    parts = []
+    if proj_resp.get("researcher"):
+        parts.append(proj_resp["researcher"])
+    if proj_resp.get("institution"):
+        parts.append(proj_resp["institution"])
+    return {
+        "id": proj_resp["id"],
+        "title": proj_resp["title"],
+        "by": " / ".join(parts) if parts else None,
+        "program": proj_resp.get("program"),
+        "date": proj_resp.get("date"),
+    }
+
 # Endpoints
 @app.get("/")
 def root():
@@ -60,25 +77,26 @@ def root():
         "version": "0.1.0"
     }
 
-@app.get("/api/projects/search", response_model=List[ProjectResponse])
+@app.get("/api/projects/search")
 def search_projects(
     q: Optional[str] = Query(None, description="Search query"),
     year: Optional[int] = Query(None, description="Filter by year"),
     institution: Optional[str] = Query(None, description="Filter by institution"),
     researcher: Optional[str] = Query(None, description="Filter by researcher"),
     program: Optional[str] = Query(None, description="Filter by program"),
-    limit: int = Query(20, le=100, description="Max results")
+    limit: int = Query(20, le=100, description="Max results"),
+    format: Optional[str] = Query(None, description="Response format: 'compact' for condensed output"),
 ):
-    """Search projects with filters"""
+    """Search projects with filters. Use format=compact for LLM-optimized condensed output."""
     session = next(get_db())
-    
+
     query = session.query(
         Project, Researcher, Institution, Program, Announcement
     ).join(Researcher, Project.researcher_id == Researcher.id, isouter=True
     ).join(Institution, Project.institution_id == Institution.id, isouter=True
     ).join(Announcement, Project.announcement_id == Announcement.id
     ).join(Program, Announcement.program_id == Program.id, isouter=True)
-    
+
     # Apply filters
     if q:
         query = query.filter(or_(
@@ -94,21 +112,31 @@ def search_projects(
         query = query.filter(Researcher.name.contains(researcher))
     if program:
         query = query.filter(Program.name.contains(program))
-    
+
+    total = query.count()
     results = query.limit(limit).all()
-    
-    return [
-        ProjectResponse(
-            id=proj.id,
-            title=proj.title,
-            researcher=res.name if res else None,
-            institution=inst.name if inst else None,
-            position=proj.position,
-            program=prog.name if prog else None,
-            date=str(ann.date) if ann.date else None
-        )
+
+    projects = [
+        {
+            "id": proj.id,
+            "title": proj.title,
+            "researcher": res.name if res else None,
+            "institution": inst.name if inst else None,
+            "position": proj.position,
+            "program": prog.name if prog else None,
+            "date": str(ann.date) if ann.date else None,
+        }
         for proj, res, inst, prog, ann in results
     ]
+
+    if format == "compact":
+        projects = [_compact_project(p) for p in projects]
+
+    return {
+        "total": total,
+        "returned": len(projects),
+        "projects": projects,
+    }
 
 @app.get("/api/projects/{project_id}", response_model=ProjectResponse)
 def get_project(project_id: int):
@@ -221,6 +249,168 @@ def get_researcher(name: str):
             for proj, inst, prog, ann in projects
         ]
     }
+
+# --- Quick Win 1: Metadata Endpoint ---
+
+@app.get("/api/metadata")
+def get_metadata():
+    """Return schema info, available filters, and value ranges for LLM query planning."""
+    session = next(get_db())
+
+    years = [
+        int(y) for (y,) in session.query(
+            extract('year', Announcement.date)
+        ).distinct().order_by(extract('year', Announcement.date)).all()
+        if y
+    ]
+
+    top_programs = [
+        name for (name,) in session.query(Program.name).join(Announcement).join(Project).group_by(
+            Program.name
+        ).order_by(func.count(Project.id).desc()).limit(20).all()
+    ]
+
+    top_institutions = [
+        name for (name,) in session.query(Institution.name).join(Project).group_by(
+            Institution.name
+        ).order_by(func.count(Project.id).desc()).limit(20).all()
+    ]
+
+    return {
+        "database": {
+            "total_projects": session.query(Project).count(),
+            "total_researchers": session.query(Researcher).count(),
+            "total_institutions": session.query(Institution).count(),
+            "total_programs": session.query(Program).count(),
+            "total_announcements": session.query(Announcement).count(),
+        },
+        "filters": {
+            "years": years,
+            "top_programs": top_programs,
+            "top_institutions": top_institutions,
+        },
+        "endpoints": [
+            {"method": "GET", "path": "/api/projects/search", "params": ["q", "year", "institution", "researcher", "program", "limit", "format"]},
+            {"method": "GET", "path": "/api/projects/{id}", "params": ["format"]},
+            {"method": "GET", "path": "/api/stats/overview"},
+            {"method": "GET", "path": "/api/stats/by_institution", "params": ["top_n", "year"]},
+            {"method": "GET", "path": "/api/stats/by_year"},
+            {"method": "GET", "path": "/api/researchers/{name}"},
+            {"method": "GET", "path": "/api/metadata"},
+            {"method": "GET", "path": "/api/suggestions"},
+            {"method": "POST", "path": "/api/bulk", "body": {"queries": [{"path": "...", "params": {}}]}},
+        ],
+        "format_options": ["full (default)", "compact"],
+    }
+
+
+# --- Quick Win 2: Query Suggestions Endpoint ---
+
+@app.get("/api/suggestions")
+def get_suggestions():
+    """Return example queries to help LLMs understand API capabilities."""
+    return {
+        "description": "Example queries for the AMED Research Database API",
+        "examples": [
+            {
+                "intent": "Search for cancer research projects",
+                "url": "/api/projects/search?q=がん&limit=10",
+            },
+            {
+                "intent": "Search projects by institution",
+                "url": "/api/projects/search?institution=東京大学&limit=10",
+            },
+            {
+                "intent": "Get projects from a specific year",
+                "url": "/api/projects/search?year=2025&limit=20",
+            },
+            {
+                "intent": "Search by researcher name",
+                "url": "/api/projects/search?researcher=田中&limit=10",
+            },
+            {
+                "intent": "Search by program name",
+                "url": "/api/projects/search?program=がん医療&limit=10",
+            },
+            {
+                "intent": "Combine filters",
+                "url": "/api/projects/search?q=AI&year=2025&institution=大学&limit=10",
+            },
+            {
+                "intent": "Get compact results for large queries",
+                "url": "/api/projects/search?q=感染症&limit=50&format=compact",
+            },
+            {
+                "intent": "Top institutions overall",
+                "url": "/api/stats/by_institution?top_n=10",
+            },
+            {
+                "intent": "Top institutions in a specific year",
+                "url": "/api/stats/by_institution?top_n=10&year=2025",
+            },
+            {
+                "intent": "Project counts by year",
+                "url": "/api/stats/by_year",
+            },
+            {
+                "intent": "Overall database statistics",
+                "url": "/api/stats/overview",
+            },
+            {
+                "intent": "Researcher profile",
+                "url": "/api/researchers/山田",
+            },
+            {
+                "intent": "Run multiple queries at once",
+                "method": "POST",
+                "url": "/api/bulk",
+                "body": {
+                    "queries": [
+                        {"path": "/api/stats/overview"},
+                        {"path": "/api/stats/by_institution", "params": {"top_n": 5}},
+                        {"path": "/api/projects/search", "params": {"q": "がん", "limit": 5, "format": "compact"}},
+                    ]
+                },
+            },
+        ],
+    }
+
+
+# --- Quick Win 3: Bulk Query Endpoint ---
+
+class BulkQueryItem(BaseModel):
+    path: str
+    params: Optional[dict] = None
+
+class BulkRequest(BaseModel):
+    queries: List[BulkQueryItem]
+
+@app.post("/api/bulk")
+async def bulk_query(request: BulkRequest, raw_request: Request):
+    """Execute multiple API queries in a single request. Max 10 queries."""
+    if len(request.queries) > 10:
+        raise HTTPException(status_code=400, detail="Maximum 10 queries per bulk request")
+
+    results = []
+    for q in request.queries:
+        # Build internal URL with params
+        url = q.path
+        if q.params:
+            param_str = "&".join(f"{k}={v}" for k, v in q.params.items())
+            url = f"{q.path}?{param_str}"
+
+        # Use the test client to call internal routes
+        from starlette.testclient import TestClient
+        client = TestClient(app, raise_server_exceptions=False)
+        resp = client.get(url)
+        results.append({
+            "path": q.path,
+            "status": resp.status_code,
+            "data": resp.json() if resp.status_code == 200 else {"error": resp.text},
+        })
+
+    return {"results": results}
+
 
 if __name__ == "__main__":
     import uvicorn
