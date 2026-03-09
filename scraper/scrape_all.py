@@ -168,8 +168,13 @@ def main():
     print("-"*60)
     
     all_projects = []
+    total_completed = len(progress['completed'])
+    
     for i, link in enumerate(remaining, 1):
-        print(f"\n[{i}/{len(remaining)}] {link['text'][:60]}...")
+        overall_progress = total_completed + i
+        percent = (overall_progress / len(links)) * 100
+        print(f"\n[{i}/{len(remaining)}] Overall: {overall_progress}/{len(links)} ({percent:.1f}%)")
+        print(f"  {link['text'][:70]}...")
         
         html = scraper.fetch(link['url'])
         if html:
@@ -185,7 +190,9 @@ def main():
         
         # Save progress periodically
         if i % CONFIG['batch_size'] == 0:
-            print(f"\n  Saving progress ({i} pages)...")
+            overall = total_completed + i
+            print(f"\n  ✓ Checkpoint: {overall}/{len(links)} pages ({(overall/len(links)*100):.1f}%)")
+            print(f"  Saving progress...")
             save_progress(progress_file, progress)
             
             # Save scraped data
@@ -197,7 +204,10 @@ def main():
             scraper.stats()
     
     # Final save
-    print("\n\nSaving final results...")
+    print("\n\n" + "="*60)
+    print("SCRAPING COMPLETE")
+    print("="*60)
+    print(f"\nSaving final results...")
     save_progress(progress_file, progress)
     
     if all_projects:
@@ -206,9 +216,15 @@ def main():
             json.dump(all_projects, f, ensure_ascii=False, indent=2)
     
     scraper.stats()
-    print(f"\nCompleted: {len(progress['completed'])} pages")
-    print(f"Failed: {len(progress['failed'])} pages")
-    print(f"\nFinished at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    
+    total_in_db = len(get_db_urls())
+    print(f"\n📊 Final Statistics:")
+    print(f"  Total pages: {len(links)}")
+    print(f"  In database: {total_in_db}")
+    print(f"  Newly scraped: {len(progress['completed'])}")
+    print(f"  Failed: {len(progress['failed'])}")
+    print(f"  Completion: {((total_in_db + len(progress['completed']))/len(links)*100):.1f}%")
+    print(f"\n✓ Finished at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
     if progress['failed']:
         print(f"\nFailed URLs saved in {progress_file}")
