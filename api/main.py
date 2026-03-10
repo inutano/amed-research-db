@@ -17,8 +17,12 @@ from sqlalchemy import func, or_, extract
 app = FastAPI(
     title="AMED Research Database API",
     description="API for accessing AMED research proposals and analytics. Designed for LLM and AI agent consumption.",
-    version="0.2.0"
+    version="0.3.0"
 )
+
+# Register analytics router
+from api.analytics import router as analytics_router
+app.include_router(analytics_router)
 
 # Database setup
 DB_PATH = Path(__file__).parent.parent / 'database' / 'amed.db'
@@ -296,6 +300,14 @@ def get_metadata():
             {"method": "GET", "path": "/api/stats/by_institution", "params": ["top_n", "year"]},
             {"method": "GET", "path": "/api/stats/by_year"},
             {"method": "GET", "path": "/api/researchers/{name}"},
+            {"method": "GET", "path": "/api/analytics/trends/programs", "params": ["program", "top_n"]},
+            {"method": "GET", "path": "/api/analytics/trends/institutions", "params": ["institution", "top_n"]},
+            {"method": "GET", "path": "/api/analytics/compare", "params": ["institutions", "programs"]},
+            {"method": "GET", "path": "/api/analytics/programs/{name}"},
+            {"method": "GET", "path": "/api/analytics/institutions/{name}"},
+            {"method": "GET", "path": "/api/analytics/young_researchers", "params": ["year", "top_n"]},
+            {"method": "GET", "path": "/api/analytics/keyword_search", "params": ["keywords"]},
+            {"method": "GET", "path": "/api/analytics/collaborations", "params": ["institution", "program", "top_n"]},
             {"method": "GET", "path": "/api/metadata"},
             {"method": "GET", "path": "/api/suggestions"},
             {"method": "POST", "path": "/api/bulk", "body": {"queries": [{"path": "...", "params": {}}]}},
@@ -359,6 +371,38 @@ def get_suggestions():
             {
                 "intent": "Researcher profile",
                 "url": "/api/researchers/山田",
+            },
+            {
+                "intent": "Program trends over years",
+                "url": "/api/analytics/trends/programs?top_n=5",
+            },
+            {
+                "intent": "Institution trends over years",
+                "url": "/api/analytics/trends/institutions?institution=大学&top_n=5",
+            },
+            {
+                "intent": "Compare two institutions",
+                "url": "/api/analytics/compare?institutions=東京大学,京都大学",
+            },
+            {
+                "intent": "Detailed program analytics",
+                "url": "/api/analytics/programs/がん医療",
+            },
+            {
+                "intent": "Detailed institution analytics",
+                "url": "/api/analytics/institutions/東京大学",
+            },
+            {
+                "intent": "Young researcher statistics",
+                "url": "/api/analytics/young_researchers",
+            },
+            {
+                "intent": "Keyword frequency analysis over time",
+                "url": "/api/analytics/keyword_search?keywords=AI,ゲノム,がん",
+            },
+            {
+                "intent": "Find collaborating institutions",
+                "url": "/api/analytics/collaborations?institution=東京大学",
             },
             {
                 "intent": "Run multiple queries at once",
