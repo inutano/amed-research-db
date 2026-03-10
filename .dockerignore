@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+venv/
+env/
+.git/
+.gitignore
+*.log
+*.pid
+.DS_Store
+.vscode/
+.idea/
+*.md
+!requirements.txt

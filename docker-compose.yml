@@ -1,0 +1,9 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./database/amed.db:/app/database/amed.db
+      - ./data:/app/data
+    restart: unless-stopped
