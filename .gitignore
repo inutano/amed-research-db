@@ -8,16 +8,16 @@ venv/
 env/
 ENV/
 
-# Database
-*.db
+# Database journals
 *.db-journal
 
 # Data files
 data/*.json
 data/*.html
 
-# Logs
+# Logs & runtime
 *.log
+*.pid
 /tmp/
 
 # IDE

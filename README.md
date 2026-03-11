@@ -1,212 +1,123 @@
-# AMED Research Database API
+# AMED Research Database
 
-A REST API for accessing and analyzing research proposals accepted by AMED (Japan Agency for Medical Research and Development).
+A searchable database and API for research proposals accepted by [AMED](https://www.amed.go.jp/) (Japan Agency for Medical Research and Development), designed for analysis by humans and LLMs alike.
 
-## Overview
+## What's Inside
 
-This project collects data from AMED's public website and provides a searchable database with analytics capabilities through a REST API, designed to be consumed by LLMs and AI agents.
+- **~3,800 projects** from 2015-2025, scraped from [AMED's public listings](https://www.amed.go.jp/koubo/saitaku_index.html)
+- **3,000+ researchers**, **700+ institutions**, **200+ programs**
+- Pre-built SQLite database included (`database/amed.db`) - ready to query immediately
+- REST API with search, analytics, and LLM-optimized endpoints
+- MCP server for direct integration with Claude and other LLM tools
+- [PDF summary report](AMED_Report.pdf) with charts and analysis
 
-## Architecture
+## Quick Start
 
-```
-┌─────────────────────────────────────────┐
-│   LLM/AI Agent (Claude, GPT, etc.)     │
-│   via Kiro-CLI or direct API calls     │
-└─────────────────┬───────────────────────┘
-                  │
-┌─────────────────▼───────────────────────┐
-│   FastAPI Server                        │
-│   - Search & filter projects            │
-│   - Statistics & analytics              │
-│   - Trend analysis                      │
-│   - Network analysis                    │
-│   - OpenAPI documentation               │
-└─────────────────┬───────────────────────┘
-                  │
-┌─────────────────▼───────────────────────┐
-│   PostgreSQL/SQLite Database            │
-│   - Projects                            │
-│   - Researchers                         │
-│   - Institutions                        │
-│   - Relationships                       │
-└─────────────────────────────────────────┘
+```bash
+pip install -r requirements.txt
+
+# Start the API server
+uvicorn api.main:app --reload
+# → http://localhost:8000/docs
+
+# Or use the MCP server with Claude
+python mcp_server.py
 ```
 
-## Data Source
+### Docker
 
-- **Source**: https://www.amed.go.jp/koubo/saitaku_index.html
-- **Coverage**: ~1,000+ research projects from 2015-2026
-- **Update Frequency**: Manual/scheduled scraping
+```bash
+docker compose up
+# → http://localhost:8000/docs
+```
+
+## API Endpoints
+
+### Search
+- `GET /api/projects/search?q=がん&year=2024` - Search projects (supports `format=compact`)
+- `POST /api/projects/bulk` - Bulk query multiple searches
+
+### Statistics
+- `GET /api/stats` - Overview statistics
+- `GET /api/metadata` - Database metadata for LLM context
+- `GET /api/suggestions` - Suggested queries
+
+### Analytics (`/api/analytics/`)
+- `trends/by-year` - Project count trends
+- `trends/keywords?keywords=AI,がん,ゲノム` - Keyword frequency over time
+- `institutions/top?top_n=15` - Top institutions
+- `institutions/compare?names=東京大学,京都大学` - Side-by-side comparison
+- `institutions/collaborators?institution=東京大学` - Co-participating institutions
+- `programs/top` - Top research programs
+- `researchers/profile?name=田中` - Researcher lookup
+- `researchers/young-ratio` - Young researcher program stats
+
+## MCP Server
+
+For use with Claude Code, Claude Desktop, or any MCP-compatible client:
+
+```json
+{
+  "mcpServers": {
+    "amed": {
+      "command": "python",
+      "args": ["mcp_server.py"],
+      "cwd": "/path/to/amed-research-db"
+    }
+  }
+}
+```
+
+Tools: `search_projects`, `get_stats`, `top_institutions`, `compare_institutions`, `keyword_trends`, `researcher_profile`, `find_collaborators`
 
 ## Project Structure
 
 ```
 amed-research-db/
-├── scraper/           # Web scraping scripts
-│   ├── scrape.py      # Main scraper
-│   └── parser.py      # HTML parsing utilities
-├── database/          # Database models and setup
-│   ├── models.py      # SQLAlchemy models
-│   └── init_db.py     # Database initialization
-├── api/               # FastAPI application
-│   ├── main.py        # FastAPI app entry point
-│   ├── endpoints/     # API route handlers
-│   └── analytics.py   # Analytics functions
-├── tests/             # Test suite
-├── data/              # Sample/test data
-├── requirements.txt   # Python dependencies
-└── README.md          # This file
+├── api/
+│   ├── main.py          # FastAPI app with search, stats, metadata
+│   └── analytics.py     # Analytics endpoints (trends, comparisons)
+├── database/
+│   ├── models.py        # SQLAlchemy models (Project, Researcher, etc.)
+│   ├── import_all.py    # Batch data importer
+│   └── amed.db          # Pre-built SQLite database
+├── scraper/
+│   ├── scrape.py        # Link collector
+│   ├── scrape_all.py    # Full scraper with progress tracking
+│   └── parser.py        # HTML parser (header-based column detection)
+├── tests/               # 65 tests (parser + API)
+├── mcp_server.py        # MCP server for LLM integration
+├── AMED_Report.pdf      # Summary report with charts
+├── Dockerfile
+└── docker-compose.yml
 ```
 
-## Implementation Plan
+## Rebuilding the Database
 
-### Phase 1: Data Collection (Week 1)
-- [x] Project setup and planning
-- [ ] Build scraper for main listing page
-- [ ] Parse individual project pages
-- [ ] Extract structured data
-- [ ] Store raw HTML for backup
-- [ ] Handle rate limiting and errors
-
-### Phase 2: Database Design (Week 1-2)
-- [ ] Design database schema
-- [ ] Create SQLAlchemy models
-- [ ] Set up migrations
-- [ ] Import scraped data
-- [ ] Add indexes for performance
-- [ ] Data validation and cleaning
-
-### Phase 3: API Development (Week 2-3)
-- [ ] FastAPI application setup
-- [ ] Core endpoints:
-  - Search projects
-  - Get project details
-  - Statistics by year/institution/field
-  - Trend analysis
-  - Researcher profiles
-  - Network analysis
-- [ ] OpenAPI documentation
-- [ ] Response formatting for LLM consumption
-- [ ] Error handling
-
-### Phase 4: Analytics Features (Week 3-4)
-- [ ] Japanese text processing (MeCab)
-- [ ] Keyword extraction
-- [ ] Topic clustering
-- [ ] Time series analysis
-- [ ] Collaboration networks
-- [ ] Institution rankings
-
-### Phase 5: Testing & Deployment (Week 4)
-- [ ] Unit tests
-- [ ] Integration tests
-- [ ] API documentation
-- [ ] Docker containerization
-- [ ] Deployment guide
-
-## API Endpoints (Planned)
-
-### Search & Retrieval
-- `GET /api/projects/search` - Search projects with filters
-- `GET /api/projects/{id}` - Get project details
-- `GET /api/researchers/{name}` - Get researcher profile
-
-### Statistics
-- `GET /api/stats/overview` - Overall statistics
-- `GET /api/stats/by_institution` - Projects by institution
-- `GET /api/stats/by_field` - Projects by research field
-- `GET /api/stats/by_year` - Projects by year
-
-### Trends & Analysis
-- `GET /api/trends/topics` - Topic trends over time
-- `GET /api/trends/keywords` - Keyword frequency analysis
-- `GET /api/trends/institutions` - Institution trends
-
-### Network Analysis
-- `GET /api/network/collaborations` - Collaboration networks
-- `GET /api/network/institutions` - Institution relationships
-
-## Data Schema (Planned)
-
-### Projects
-- id, title, description
-- date, year, program_name
-- field, category
-- young_researcher_flag
-
-### Researchers
-- id, name, institution, position
-- projects (relationship)
-
-### Institutions
-- id, name, location
-- projects (relationship)
-
-### Keywords
-- id, keyword, frequency
-- projects (relationship)
-
-## Development Setup
+If you want to re-scrape and rebuild from scratch:
 
 ```bash
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # or `venv\Scripts\activate` on Windows
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run scraper
+# 1. Scrape project links
 python scraper/scrape.py
 
-# Initialize database
-python database/init_db.py
+# 2. Scrape all project pages (takes ~30 min, respectful rate limiting)
+python scraper/scrape_all.py
 
-# Run API server
-uvicorn api.main:app --reload
-
-# Access API docs
-open http://localhost:8000/docs
+# 3. Import into database
+python database/import_all.py
 ```
 
-## Usage Examples
+## Tech Stack
 
-### With Kiro-CLI
-```bash
-# Search for cancer research projects
-kiro chat "Search AMED database for cancer research in 2024"
+- Python 3.10+, FastAPI, SQLAlchemy, SQLite
+- BeautifulSoup4 (scraping), pytest (testing)
+- MCP (Model Context Protocol) for LLM integration
+- reportlab + matplotlib (PDF report)
 
-# Get institution statistics
-kiro chat "Show me top 10 institutions by project count"
+## Data Source
 
-# Analyze trends
-kiro chat "What are the emerging research topics in the last 3 years?"
-```
-
-### Direct API Calls
-```bash
-# Search projects
-curl "http://localhost:8000/api/projects/search?q=がん&year=2024"
-
-# Get statistics
-curl "http://localhost:8000/api/stats/by_institution?top_n=10"
-```
-
-## Technology Stack
-
-- **Language**: Python 3.10+
-- **Web Framework**: FastAPI
-- **Database**: SQLite (development) / PostgreSQL (production)
-- **ORM**: SQLAlchemy
-- **Scraping**: requests, BeautifulSoup4
-- **Japanese NLP**: MeCab
-- **Data Processing**: pandas
-- **Testing**: pytest
+All data is from AMED's publicly available accepted proposal listings at https://www.amed.go.jp/koubo/saitaku_index.html
 
 ## License
 
 MIT
-
-## Contributing
-
-This is a personal project for research data analysis. Contributions welcome!
