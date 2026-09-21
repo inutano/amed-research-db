@@ -1,3 +1,5 @@
+# API, scraper, and test suite.
+# The MCP server has its own conflicting dependency set: see requirements-mcp.txt
 fastapi==0.109.0
 uvicorn==0.27.0
 sqlalchemy==2.0.25
@@ -8,3 +10,6 @@ pandas==2.2.0
 pydantic==2.5.3
 python-dateutil==2.8.2
 pytest==8.0.0
+# starlette's TestClient needs httpx; 0.28 dropped the app= argument this
+# version of starlette passes, so keep it below 0.28.
+httpx==0.27.2

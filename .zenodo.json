@@ -1,0 +1,35 @@
+{
+  "title": "AMED Research Database: a searchable database, REST API, and MCP server for AMED-funded research projects",
+  "upload_type": "software",
+  "access_right": "open",
+  "license": "mit",
+  "creators": [
+    {
+      "name": "Ohta, Tazro",
+      "affiliation": "Chiba University",
+      "orcid": "0000-0003-3777-5945"
+    }
+  ],
+  "description": "<p>A searchable database and API for research proposals accepted by AMED (Japan Agency for Medical Research and Development), built for analysis by humans and LLMs alike.</p><p>The release bundles a pre-built SQLite database compiled from AMED's public listings of accepted proposals: 3,816 projects, 3,013 researchers, 741 institutions, and 214 funding programs, drawn from 489 announcements published between July 2015 and December 2025. Alongside the data it ships a FastAPI REST service with search, statistics, and analytics endpoints (yearly trends, keyword trends, institution comparison and collaboration networks, researcher lookup), an MCP (Model Context Protocol) server exposing the same queries to Claude and other LLM clients, a Docker setup, a test suite, and a PDF summary report.</p><p>The source code is released under the MIT License. The compiled database (<code>database/amed.db</code>) and the derived report (<code>AMED_Report.pdf</code>) are released under CC BY 4.0; see <code>LICENSE-DATA</code>. The underlying listings are published by AMED at https://www.amed.go.jp/koubo/saitaku_index.html and remain subject to AMED's own terms of use.</p>",
+  "keywords": [
+    "AMED",
+    "research funding",
+    "Japan",
+    "biomedical research",
+    "research information",
+    "science of science",
+    "REST API",
+    "Model Context Protocol",
+    "SQLite",
+    "open data"
+  ],
+  "language": "eng",
+  "related_identifiers": [
+    {
+      "identifier": "https://www.amed.go.jp/koubo/saitaku_index.html",
+      "relation": "isDerivedFrom",
+      "resource_type": "dataset",
+      "scheme": "url"
+    }
+  ]
+}

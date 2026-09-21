@@ -1,0 +1,9 @@
+# Dependencies for mcp_server.py.
+#
+# Install these in a separate environment from requirements.txt: the mcp
+# package requires newer starlette and pydantic releases than the versions
+# fastapi 0.109 pins for the REST API.
+#
+# mcp 2.x removed mcp.server.fastmcp.FastMCP, which this server uses.
+mcp>=1.2,<2
+sqlalchemy==2.0.25

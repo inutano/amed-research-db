@@ -19,8 +19,13 @@ pip install -r requirements.txt
 # Start the API server
 uvicorn api.main:app --reload
 # → http://localhost:8000/docs
+```
 
-# Or use the MCP server with Claude
+The MCP server needs a separate environment, because `mcp` requires newer
+starlette and pydantic releases than the API stack pins:
+
+```bash
+pip install -r requirements-mcp.txt
 python mcp_server.py
 ```
 
@@ -54,7 +59,8 @@ docker compose up
 
 ## MCP Server
 
-For use with Claude Code, Claude Desktop, or any MCP-compatible client:
+For use with Claude Code, Claude Desktop, or any MCP-compatible client.
+Install `requirements-mcp.txt` first (see Quick Start), then:
 
 ```json
 {
@@ -82,11 +88,14 @@ amed-research-db/
 │   ├── import_all.py    # Batch data importer
 │   └── amed.db          # Pre-built SQLite database
 ├── scraper/
-│   ├── scrape.py        # Link collector
-│   ├── scrape_all.py    # Full scraper with progress tracking
-│   └── parser.py        # HTML parser (header-based column detection)
+│   ├── scrape_all.py    # Full scraper: link collection + progress tracking
+│   ├── parser.py        # HTML parser (header-based column detection)
+│   ├── check_new.py     # Detect newly published announcements
+│   └── find_missing.py  # Re-scrape pages missing from the database
 ├── tests/               # 65 tests (parser + API)
 ├── mcp_server.py        # MCP server for LLM integration
+├── requirements.txt     # API, scraper, tests
+├── requirements-mcp.txt # MCP server (separate environment)
 ├── AMED_Report.pdf      # Summary report with charts
 ├── Dockerfile
 └── docker-compose.yml
@@ -97,13 +106,11 @@ amed-research-db/
 If you want to re-scrape and rebuild from scratch:
 
 ```bash
-# 1. Scrape project links
-python scraper/scrape.py
-
-# 2. Scrape all project pages (takes ~30 min, respectful rate limiting)
+# 1. Collect links and scrape all project pages
+#    (takes ~30 min, respectful rate limiting; resumes from saved progress)
 python scraper/scrape_all.py
 
-# 3. Import into database
+# 2. Import into database
 python database/import_all.py
 ```
 
@@ -118,6 +125,17 @@ python database/import_all.py
 
 All data is from AMED's publicly available accepted proposal listings at https://www.amed.go.jp/koubo/saitaku_index.html
 
+## Citation
+
+If you use this database or software, please cite the archived release. See
+`CITATION.cff`, or GitHub's "Cite this repository" button, for the current
+version and authorship.
+
 ## License
 
-MIT
+- **Code** — MIT (`LICENSE`)
+- **Data and report** — CC BY 4.0: `database/amed.db` and `AMED_Report.pdf` (`LICENSE-DATA`)
+
+The CC BY 4.0 terms cover the compilation and the derived analyses, not the
+upstream listings themselves. Check AMED's own terms of use before
+redistributing the source material.
