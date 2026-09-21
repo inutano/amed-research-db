@@ -16,11 +16,19 @@ authors:
     given-names: Tazro
     orcid: "https://orcid.org/0000-0003-3777-5945"
     affiliation: "Chiba University"
+doi: "10.5281/zenodo.22882293"
 version: 1.0.0
-date-released: "2026-09-22"
+date-released: "2026-09-21"
 license: MIT
 repository-code: "https://github.com/inutano/amed-research-db"
-url: "https://github.com/inutano/amed-research-db"
+url: "https://doi.org/10.5281/zenodo.22882293"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.22882293"
+    description: "Concept DOI, always resolving to the latest version"
+  - type: doi
+    value: "10.5281/zenodo.22882294"
+    description: "DOI of version v1.0.0"
 keywords:
   - AMED
   - research funding
