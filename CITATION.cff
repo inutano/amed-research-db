@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: "If you use this database or software, please cite it as below."
+title: "AMED Research Database: a searchable database, REST API, and MCP server for AMED-funded research projects"
+abstract: >-
+  A searchable database and API for research proposals accepted by AMED (Japan
+  Agency for Medical Research and Development). Ships a pre-built SQLite
+  database of 3,816 projects, 3,013 researchers, 741 institutions, and 214
+  funding programs compiled from AMED's public listings (2015-2025), together
+  with a FastAPI REST service, analytics endpoints, an MCP server for LLM
+  clients, and a PDF summary report. The source code is MIT licensed; the
+  compiled database and the report are released under CC BY 4.0 (see
+  LICENSE-DATA).
+type: software
+authors:
+  - family-names: Ohta
+    given-names: Tazro
+    orcid: "https://orcid.org/0000-0003-3777-5945"
+    affiliation: "Chiba University"
+version: 1.0.0
+date-released: "2026-09-22"
+license: MIT
+repository-code: "https://github.com/inutano/amed-research-db"
+url: "https://github.com/inutano/amed-research-db"
+keywords:
+  - AMED
+  - research funding
+  - Japan
+  - biomedical research
+  - science of science
+  - Model Context Protocol
+  - open data

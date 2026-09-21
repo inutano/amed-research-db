@@ -1,0 +1,25 @@
+# License for data and report
+
+The MIT License in `LICENSE` covers the source code in this repository.
+
+The compiled data and the derived report are made available under the
+Creative Commons Attribution 4.0 International License (CC BY 4.0):
+
+- `database/amed.db` — the compiled SQLite database
+- `AMED_Report.pdf` — the summary report and its charts
+
+Legal code: https://creativecommons.org/licenses/by/4.0/legalcode
+Summary: https://creativecommons.org/licenses/by/4.0/
+
+To attribute, cite the Zenodo record for this repository (see `CITATION.cff`).
+
+## Upstream source
+
+The records were compiled from the accepted proposal listings published by
+AMED (Japan Agency for Medical Research and Development) at
+https://www.amed.go.jp/koubo/saitaku_index.html
+
+The CC BY 4.0 license above applies to the compilation, the parsing and
+normalization, and the derived analyses in this repository. It does not
+override any rights AMED holds in the underlying listings. Consult AMED's own
+terms of use before redistributing the upstream material itself.
