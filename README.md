@@ -1,5 +1,7 @@
 # AMED Research Database
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22882293.svg)](https://doi.org/10.5281/zenodo.22882293)
+
 A searchable database and API for research proposals accepted by [AMED](https://www.amed.go.jp/) (Japan Agency for Medical Research and Development), designed for analysis by humans and LLMs alike.
 
 ## What's Inside
@@ -127,9 +129,18 @@ All data is from AMED's publicly available accepted proposal listings at https:/
 
 ## Citation
 
-If you use this database or software, please cite the archived release. See
-`CITATION.cff`, or GitHub's "Cite this repository" button, for the current
-version and authorship.
+Each release is archived on Zenodo. Cite the concept DOI
+[10.5281/zenodo.22882293](https://doi.org/10.5281/zenodo.22882293), which
+always resolves to the latest version, or the DOI of the specific version you
+used (v1.0.0 is
+[10.5281/zenodo.22882294](https://doi.org/10.5281/zenodo.22882294)).
+
+> Ohta, T. (2026). *AMED Research Database: a searchable database, REST API,
+> and MCP server for AMED-funded research projects* (v1.0.0) [Software].
+> Zenodo. https://doi.org/10.5281/zenodo.22882293
+
+See `CITATION.cff`, or GitHub's "Cite this repository" button, for a
+machine-readable version.
 
 ## License
 
